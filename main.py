@@ -106,10 +106,10 @@ def language_callback(client, callback_query):
     set_user_language(user_id, language)
     if language == "en":
         bot.send_message(callback_query.message.chat.id, f"**👋 Hi {callback_query.from_user.mention}, I am Save Restricted Bot, I can send you restricted content by its post link**\n\n{USAGE}",
-                         reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Channel ⁽ ᴛᴄʀᴇᴘ ₎ 🍿", url="https://t.me/tcrep1")]]), reply_to_message_id=callback_query.message.id)
+                         reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Channel ᏔᎯ ᏞᎬᎠ ᏢᎡᏫ", url="https://t.me/tcrep1")]]), reply_to_message_id=callback_query.message.id)
     elif language == "ar":
         bot.send_message(callback_query.message.chat.id, f"**👋 مرحبًا {callback_query.from_user.mention}، أنا بوت حفظ المحتوى المقيد، يمكنني إرسال المحتوى المقيد لك عبر رابط المنشور**\n\n{USAGE_AR}",
-                         reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(" قناة ⁽ ᴛᴄʀᴇᴘ ₎ 🍿", url="https://t.me/tcrep1")]]), reply_to_message_id=callback_query.message.id)
+                         reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("قناة ᏔᎯ ᏞᎬᎠ ᏢᎡᏫ", url="https://t.me/tcrep1")]]), reply_to_message_id=callback_query.message.id)
     callback_query.answer()
 
 @bot.on_message(filters.text)
