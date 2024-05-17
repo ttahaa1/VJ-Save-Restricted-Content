@@ -86,10 +86,10 @@ def send_start(client: pyrogram.client.Client, message: pyrogram.types.messages_
     user_id = message.from_user.id
     user_language = get_user_language(user_id)
     if user_language is None:
-        bot.send_message(message.chat.id, "Please choose your language / من فضلك اختر لغتك",
+        bot.send_message(message.chat.id, "__ choose your language  /  اختار لغه البوت __",
                          reply_markup=InlineKeyboardMarkup([
-                             [InlineKeyboardButton("English", callback_data="lang_en"),
-                              InlineKeyboardButton("العربية", callback_data="lang_ar")]
+                             [InlineKeyboardButton("English 💞", callback_data="lang_en"),
+                              InlineKeyboardButton(" 💙 عربي", callback_data="lang_ar")]
                          ]), reply_to_message_id=message.id)
     else:
         if user_language == "en":
@@ -116,10 +116,10 @@ def language_callback(client, callback_query):
 def save(client: pyrogram.client.Client, message: pyrogram.types.messages_and_media.message.Message):
     user_language = get_user_language(message.from_user.id)
     if user_language is None:
-        bot.send_message(message.chat.id, "Please choose your language / من فضلك اختر لغتك",
+        bot.send_message(message.chat.id, "__ choose your language  /  اختار لغه البوت __",
                          reply_markup=InlineKeyboardMarkup([
-                             [InlineKeyboardButton("English", callback_data="lang_en"),
-                              InlineKeyboardButton("العربية", callback_data="lang_ar")]
+                             [InlineKeyboardButton("English 💞", callback_data="lang_en"),
+                              InlineKeyboardButton(" 💙 عربي", callback_data="lang_ar")]
                          ]), reply_to_message_id=message.id)
         return
 
