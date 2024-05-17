@@ -21,7 +21,27 @@ if ss is not None:
 else:
     acc = None
 
-# download status
+# Load or create the user language settings file
+language_file = "user_languages.json"
+if not os.path.exists(language_file):
+    with open(language_file, "w") as f:
+        json.dump({}, f)
+
+# Function to get the user's language
+def get_user_language(user_id):
+    with open(language_file, "r") as f:
+        user_languages = json.load(f)
+    return user_languages.get(str(user_id), "en")
+
+# Function to set the user's language
+def set_user_language(user_id, language):
+    with open(language_file, "r") as f:
+        user_languages = json.load(f)
+    user_languages[str(user_id)] = language
+    with open(language_file, "w") as f:
+        json.dump(user_languages, f)
+
+# Download status
 def downstatus(statusfile, message):
     while True:
         if os.path.exists(statusfile):
@@ -37,8 +57,7 @@ def downstatus(statusfile, message):
         except:
             time.sleep(5)
 
-
-# upload status
+# Upload status
 def upstatus(statusfile, message):
     while True:
         if os.path.exists(statusfile):
@@ -54,44 +73,59 @@ def upstatus(statusfile, message):
         except:
             time.sleep(5)
 
-
-# progress writter
+# Progress writer
 def progress(current, total, message, type):
     with open(f'{message.id}{type}status.txt', "w") as fileup:
         fileup.write(f"{current * 100 / total:.1f}%")
 
-
-# start command
+# Start command
 @bot.on_message(filters.command(["start"]))
 def send_start(client: pyrogram.client.Client, message: pyrogram.types.messages_and_media.message.Message):
-    bot.send_message(
-        message.chat.id,
-        f"**__👋 Hi** **{message.from_user.mention}**, **I am Save Restricted Bot, I can send you restricted content by its post link__**\n\n{USAGE}",
-        reply_markup=InlineKeyboardMarkup(
-            [[InlineKeyboardButton("Channel ⁽ ᴛᴄʀᴇᴘ ₎ 🍿 ", url="https://t.me/tcrep1")]]
-        ),
-        reply_to_message_id=message.id
-    )
+    user_language = get_user_language(message.from_user.id)
+    if user_language == "en":
+        bot.send_message(message.chat.id, "Please choose your language / من فضلك اختر لغتك",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("English", callback_data="set_language_en"), InlineKeyboardButton("العربية", callback_data="set_language_ar")]
+            ]),
+            reply_to_message_id=message.id
+        )
+    else:
+        bot.send_message(message.chat.id, "من فضلك اختر لغتك / Please choose your language",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("English", callback_data="set_language_en"), InlineKeyboardButton("العربية", callback_data="set_language_ar")]
+            ]),
+            reply_to_message_id=message.id
+        )
 
-# help command in Arabic
-@bot.on_message(filters.command(["help_ar"]))
-def send_help_ar(client: pyrogram.client.Client, message: pyrogram.types.messages_and_media.message.Message):
-    bot.send_message(
-        message.chat.id,
-        f"**مرحباً {message.from_user.mention}**، **أنا بوت حفظ المحتوى المقيد، يمكنني إرسال المحتوى المقيد لك عبر رابط المنشور**\n\n{USAGE_AR}",
-        reply_markup=InlineKeyboardMarkup(
-            [[InlineKeyboardButton("القناة ⁽ ᴛᴄʀᴇᴘ ₎ 🍿 ", url="https://t.me/tcrep1")]]
-        ),
-        reply_to_message_id=message.id
-    )
+# Handle language selection
+@bot.on_callback_query(filters.regex("set_language_"))
+def language_selection(client: pyrogram.client.Client, callback_query: pyrogram.types.CallbackQuery):
+    language = callback_query.data.split("_")[-1]
+    set_user_language(callback_query.from_user.id, language)
+    if language == "en":
+        bot.send_message(callback_query.message.chat.id, f"👋 Hi {callback_query.from_user.mention}, I am Save Restricted Bot, I can send you restricted content by its post link\n\n{USAGE}",
+            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🌐 Update Channel", url="https://t.me/VJ_Botz")]]),
+            reply_to_message_id=callback_query.message.id
+        )
+    else:
+        bot.send_message(callback_query.message.chat.id, f"👋 مرحباً {callback_query.from_user.mention}، أنا بوت لحفظ المحتوى المقيد، يمكنني إرسال المحتوى المقيد لك عن طريق رابط المنشور\n\n{USAGE_AR}",
+            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🌐 قناة التحديثات", url="https://t.me/VJ_Botz")]]),
+            reply_to_message_id=callback_query.message.id
+        )
 
 @bot.on_message(filters.text)
 def save(client: pyrogram.client.Client, message: pyrogram.types.messages_and_media.message.Message):
+    user_language = get_user_language(message.from_user.id)
+    if user_language == "en":
+        handle_message_en(client, message)
+    else:
+        handle_message_ar(client, message)
+
+def handle_message_en(client: pyrogram.client.Client, message: pyrogram.types.messages_and_media.message.Message):
     print(message.text)
 
-    # joining chats
+    # Joining chats
     if "https://t.me/+" in message.text or "https://t.me/joinchat/" in message.text:
-
         if acc is None:
             bot.send_message(message.chat.id, f"**String Session is not Set**", reply_to_message_id=message.id)
             return
@@ -108,9 +142,8 @@ def save(client: pyrogram.client.Client, message: pyrogram.types.messages_and_me
         except InviteHashExpired:
             bot.send_message(message.chat.id, "**Invalid Link**", reply_to_message_id=message.id)
 
-    # getting message
+    # Getting message
     elif "https://t.me/" in message.text:
-
         datas = message.text.split("/")
         temp = datas[-1].replace("?single", "").split("-")
         fromID = int(temp[0].strip())
@@ -121,7 +154,7 @@ def save(client: pyrogram.client.Client, message: pyrogram.types.messages_and_me
 
         for msgid in range(fromID, toID + 1):
 
-            # private
+            # Private
             if "https://t.me/c/" in message.text:
                 chatid = int("-100" + datas[4])
 
@@ -131,7 +164,7 @@ def save(client: pyrogram.client.Client, message: pyrogram.types.messages_and_me
 
                 handle_private(message, chatid, msgid)
 
-            # bot
+            # Bot
             elif "https://t.me/b/" in message.text:
                 username = datas[4]
 
@@ -143,7 +176,7 @@ def save(client: pyrogram.client.Client, message: pyrogram.types.messages_and_me
                 except Exception as e:
                     bot.send_message(message.chat.id, f"**Error** : __{e}__", reply_to_message_id=message.id)
 
-            # public
+            # Public
             else:
                 username = datas[3]
 
@@ -164,11 +197,89 @@ def save(client: pyrogram.client.Client, message: pyrogram.types.messages_and_me
                     except Exception as e:
                         bot.send_message(message.chat.id, f"**Error** : __{e}__", reply_to_message_id=message.id)
 
-            # wait time
+            # Wait time
             time.sleep(3)
 
+def handle_message_ar(client: pyrogram.client.Client, message: pyrogram.types.messages_and_media.message.Message):
+    print(message.text)
 
-# handle private
+    # Joining chats
+    if "https://t.me/+" in message.text or "https://t.me/joinchat/" in message.text:
+        if acc is None:
+            bot.send_message(message.chat.id, f"**جلسة السلسلة غير مضبوطة**", reply_to_message_id=message.id)
+            return
+
+        try:
+            try:
+                acc.join_chat(message.text)
+            except Exception as e:
+                bot.send_message(message.chat.id, f"**خطأ** : __{e}__", reply_to_message_id=message.id)
+                return
+            bot.send_message(message.chat.id, "**تم الانضمام إلى الدردشة**", reply_to_message_id=message.id)
+        except UserAlreadyParticipant:
+            bot.send_message(message.chat.id, "**تم الانضمام إلى الدردشة مسبقاً**", reply_to_message_id=message.id)
+        except InviteHashExpired:
+            bot.send_message(message.chat.id, "**رابط غير صالح**", reply_to_message_id=message.id)
+
+    # Getting message
+    elif "https://t.me/" in message.text:
+        datas = message.text.split("/")
+        temp = datas[-1].replace("?single", "").split("-")
+        fromID = int(temp[0].strip())
+        try:
+            toID = int(temp[1].strip())
+        except:
+            toID = fromID
+
+        for msgid in range(fromID, toID + 1):
+
+            # Private
+            if "https://t.me/c/" in message.text:
+                chatid = int("-100" + datas[4])
+
+                if acc is None:
+                    bot.send_message(message.chat.id, f"**جلسة السلسلة غير مضبوطة**", reply_to_message_id=message.id)
+                    return
+
+                handle_private(message, chatid, msgid)
+
+            # Bot
+            elif "https://t.me/b/" in message.text:
+                username = datas[4]
+
+                if acc is None:
+                    bot.send_message(message.chat.id, f"**جلسة السلسلة غير مضبوطة**", reply_to_message_id=message.id)
+                    return
+                try:
+                    handle_private(message, username, msgid)
+                except Exception as e:
+                    bot.send_message(message.chat.id, f"**خطأ** : __{e}__", reply_to_message_id=message.id)
+
+            # Public
+            else:
+                username = datas[3]
+
+                try:
+                    msg = bot.get_messages(username, msgid)
+                except UsernameNotOccupied:
+                    bot.send_message(message.chat.id, f"**اسم المستخدم غير موجود**", reply_to_message_id=message.id)
+                    return
+
+                try:
+                    bot.copy_message(message.chat.id, msg.chat.id, msg.id, reply_to_message_id=message.id)
+                except:
+                    if acc is None:
+                        bot.send_message(message.chat.id, f"**جلسة السلسلة غير مضبوطة**", reply_to_message_id=message.id)
+                        return
+                    try:
+                        handle_private(message, username, msgid)
+                    except Exception as e:
+                        bot.send_message(message.chat.id, f"**خطأ** : __{e}__", reply_to_message_id=message.id)
+
+            # Wait time
+            time.sleep(3)
+
+# Handle private
 def handle_private(message: pyrogram.types.messages_and_media.message.Message, chatid: int, msgid: int):
     msg: pyrogram.types.messages_and_media.message.Message = acc.get_messages(chatid, msgid)
     msg_type = get_message_type(msg)
@@ -226,54 +337,123 @@ def handle_private(message: pyrogram.types.messages_and_media.message.Message, c
             os.remove(thumb)
 
     elif "Photo" == msg_type:
-        bot.send_photo(message.chat.id, file, caption=msg.caption, caption_entities=msg.caption_entities, reply_to_message_id=message.id, progress=progress, progress_args=[message, "up"])
+        bot.send_photo(message.chat.id, file, caption=msg.caption, caption_entities=msg.caption_entities, reply_to_message_id=message.id)
 
     os.remove(file)
-    os.remove(f'{message.id}upstatus.txt')
+    if os.path.exists(f'{message.id}upstatus.txt'):
+        os.remove(f'{message.id}upstatus.txt')
+    bot.delete_messages(message.chat.id, [smsg.id])
 
+# Get the type of message
 def get_message_type(msg: pyrogram.types.messages_and_media.message.Message):
-    if msg.text:
-        return "Text"
-    elif msg.document:
+    try:
+        msg.document.file_id
         return "Document"
-    elif msg.video:
+    except:
+        pass
+
+    try:
+        msg.video.file_id
         return "Video"
-    elif msg.animation:
+    except:
+        pass
+
+    try:
+        msg.animation.file_id
         return "Animation"
-    elif msg.sticker:
+    except:
+        pass
+
+    try:
+        msg.sticker.file_id
         return "Sticker"
-    elif msg.voice:
+    except:
+        pass
+
+    try:
+        msg.voice.file_id
         return "Voice"
-    elif msg.audio:
+    except:
+        pass
+
+    try:
+        msg.audio.file_id
         return "Audio"
-    elif msg.photo:
+    except:
+        pass
+
+    try:
+        msg.photo.file_id
         return "Photo"
-    else:
-        return "Unknown"
+    except:
+        pass
 
+    try:
+        msg.text
+        return "Text"
+    except:
+        pass
 
-USAGE = """
-**How to use the bot:**
+USAGE = """**FOR PUBLIC CHATS**
 
-1. **Save Post**: Send me a link to a Telegram post, and I will save it for you.
+**__just send post/s link__**
 
-2. **Download Status**: I will keep you updated on the download and upload status.
+**FOR PRIVATE CHATS**
 
-3. **Private Content**: If the post is from a private group or channel, ensure you have provided the correct session string.
+**__first send invite link of the chat (unnecessary if the account of string session already member of the chat)
+then send post/s link__**
 
-4. **Supported Content**: I can handle various content types including text, documents, videos, animations, stickers, voice messages, audio, and photos.
+**FOR BOT CHATS**
+
+**__send link with** '/b/', **bot's username and message id, you might want to install some unofficial client to get the id like below__**
+
+```
+https://t.me/b/botusername/4321
+```
+
+**MULTI POSTS**
+
+**__send public/private posts link as explained above with formate "from - to" to send multiple messages like below__**
+
+```
+https://t.me/xxxx/1001-1010
+
+https://t.me/c/xxxx/101 - 120
+```
+
+**__note that space in between doesn't matter__**
 """
 
-USAGE_AR = """
-**كيفية استخدام البوت:**
+USAGE_AR = """- **للدردشات العامة**
 
-1. **حفظ المنشور**: أرسل لي رابط المنشور على تليجرام، وسأقوم بحفظه لك.
+**__ارسل رابط الرساله فقط لتحويلها__**
 
-2. **حالة التحميل**: سأبقيك على اطلاع بحالة التحميل والرفع.
+- **للدردشات الخاصة**
 
-3. **المحتوى الخاص**: إذا كان المنشور من مجموعة أو قناة خاصة، تأكد من أنك قدمت سلسلة الجلسة الصحيحة.
+**__أرسل أولاً رابط دعوة للدردشة (غير ضروري إذا كان حساب جلسة السلسلة عضوًا بالفعل في الدردشة)
+ثم أرسل رابط المشاركة/النشرات__**
 
-4. **المحتوى المدعوم**: يمكنني التعامل مع أنواع مختلفة من المحتوى بما في ذلك النصوص، المستندات، الفيديوهات، الرسوم المتحركة، الملصقات، الرسائل الصوتية، الصوت، والصور.
+**لمحادثات الروبوت**
+
+**__أرسل رابطًا يحتوي على "/b/"، واسم مستخدم الروبوت ومعرف الرسالة، وقد ترغب في تثبيت عميل غير رسمي للحصول على المعرف كما هو موضح أدناه__**
+
+```
+https://t.me/b/botusername/4321
+```
+
+**تحويل متعدد**
+
+**__إرسال رابط المشاركات العامة/الخاصة كما هو موضح أعلاه بصيغة "من - إلى" لإرسال رسائل متعددة كما هو موضح أدناه__**
+
+```
+https://t.me/xxxx/1001-1010
+
+https://t.me/c/xxxx/101 - 120
+```
+
+**__لاحظ أن المسافة بينهما لا يهم__**
 """
 
+
+# infinty polling
 bot.run()
