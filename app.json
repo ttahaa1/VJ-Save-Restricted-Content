@@ -1,7 +1,7 @@
 {
     "name": "Save restricted content bot",
-    "description": " بوت تيليجرام لحفظ المحتوي من القنوات المقيده @tcrep1 -- Telegram bot to save restricted content.",
-    "logo": "https://telegra.ph/file/9a475a189b8cbf68f3047.jpg",
+    "description": "Telegram bot to save restricted content from @tcrep1 -- بوت تيليجرام لحفظ المحتوى من القنوات المقيدة.",
+    "logo": "https://telegra.ph/file/2102b39cc61c9c6cfd3ef.png",
     "keywords": [
         "telegram",
         "Save restricted content",
@@ -11,29 +11,21 @@
     "website": "",
     "success_url": "https://t.me/tcrep1",
     "env": {
-        "API_HASH": {
-            "description": "ادخل  API HASH تجيبه من هنا.telegram.org",
-            "value": ""
+        "HASH": {
+            "description": "Your API Hash from my.telegram.org",
+            "value": "YOUR_API_HASH"
         },
-        "API_ID": {
-            "description": "ادخل API ID تجيبه من هنا.telegram.org",
-            "value": ""
+        "ID": {
+            "description": "Your API ID from my.telegram.org",
+            "value": "YOUR_API_ID"
         },
-        "BOT_TOKEN": {
-            "description": "توكن بوتك, تجيبه من البوت دا  @BotFather.",
-            "value": ""
+        "TOKEN": {
+            "description": "Your bot token from @BotFather.",
+            "value": "YOUR_BOT_TOKEN"
         },
-        "SESSION": {
-            "description": "Pyrogram string session الجلسه .",
-            "value": ""
-        },
-        "AUTH": {
-            "description": "ايدي المالك للبوت id.",
-            "value": ""
-        },
-        "FORCESUB": {
-            "description": "اسم قناة الاشتراك الاجباري لبوتك مهم ولا تنسا رفع البوت ادمن في القناه مهم جدا '@'.",
-            "value": ""
+        "STRING": {
+            "description": "Your Pyrogram session string, you can get it from @PyrogramTexBot.",
+            "value": "YOUR_PYROGRAM_SESSION_STRING"
         }
     },
     "buildpacks": [
