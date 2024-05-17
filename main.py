@@ -9,37 +9,39 @@ import threading
 import json
 from os import environ
 
-bot_token = environ.get("TOKEN", "")
-api_hash = environ.get("HASH", "")
+# Environment variables
+bot_token = environ.get("TOKEN", "") 
+api_hash = environ.get("HASH", "") 
 api_id = environ.get("ID", "")
 bot = Client("mybot", api_id=api_id, api_hash=api_hash, bot_token=bot_token)
 
 ss = environ.get("STRING", "")
 if ss is not None:
-    acc = Client("myacc", api_id=api_id, api_hash=api_hash, session_string=ss)
+    acc = Client("myacc" ,api_id=api_id, api_hash=api_hash, session_string=ss)
     acc.start()
 else:
     acc = None
 
-# Load or create the user language settings file
-language_file = "user_languages.json"
-if not os.path.exists(language_file):
-    with open(language_file, "w") as f:
-        json.dump({}, f)
-
-# Function to get the user's language
-def get_user_language(user_id):
-    with open(language_file, "r") as f:
+# Load language preferences
+if os.path.exists("user_languages.json"):
+    with open("user_languages.json", "r") as f:
         user_languages = json.load(f)
-    return user_languages.get(str(user_id), "en")
+else:
+    user_languages = {}
 
-# Function to set the user's language
-def set_user_language(user_id, language):
-    with open(language_file, "r") as f:
-        user_languages = json.load(f)
-    user_languages[str(user_id)] = language
-    with open(language_file, "w") as f:
+# Save language preferences
+def save_user_languages():
+    with open("user_languages.json", "w") as f:
         json.dump(user_languages, f)
+
+# Get user language
+def get_user_language(user_id):
+    return user_languages.get(str(user_id), None)
+
+# Set user language
+def set_user_language(user_id, language):
+    user_languages[str(user_id)] = language
+    save_user_languages()
 
 # Download status
 def downstatus(statusfile, message):
@@ -81,53 +83,54 @@ def progress(current, total, message, type):
 # Start command
 @bot.on_message(filters.command(["start"]))
 def send_start(client: pyrogram.client.Client, message: pyrogram.types.messages_and_media.message.Message):
-    user_language = get_user_language(message.from_user.id)
-    if user_language == "en":
+    user_id = message.from_user.id
+    user_language = get_user_language(user_id)
+    if user_language is None:
         bot.send_message(message.chat.id, "Please choose your language / من فضلك اختر لغتك",
-            reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("English", callback_data="set_language_en"), InlineKeyboardButton("العربية", callback_data="set_language_ar")]
-            ]),
-            reply_to_message_id=message.id
-        )
+                         reply_markup=InlineKeyboardMarkup([
+                             [InlineKeyboardButton("English", callback_data="lang_en"),
+                              InlineKeyboardButton("العربية", callback_data="lang_ar")]
+                         ]), reply_to_message_id=message.id)
     else:
-        bot.send_message(message.chat.id, "من فضلك اختر لغتك / Please choose your language",
-            reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("English", callback_data="set_language_en"), InlineKeyboardButton("العربية", callback_data="set_language_ar")]
-            ]),
-            reply_to_message_id=message.id
-        )
+        if user_language == "en":
+            bot.send_message(message.chat.id, f"**👋 Hi {message.from_user.mention}, I am Save Restricted Bot, I can send you restricted content by its post link**\n\n{USAGE}",
+                             reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Channel ⁽ ᴛᴄʀᴇᴘ ₎ 🍿", url="https://t.me/tcrep1")]]), reply_to_message_id=message.id)
+        elif user_language == "ar":
+            bot.send_message(message.chat.id, f"**👋 مرحبًا {message.from_user.mention}، أنا بوت حفظ المحتوى المقيد، يمكنني إرسال المحتوى المقيد لك عبر رابط المنشور**\n\n{USAGE_AR}",
+                             reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(" قناة ⁽ ᴛᴄʀᴇᴘ ₎ 🍿", url="https://t.me/tcrep1")]]), reply_to_message_id=message.id)
 
-# Handle language selection
-@bot.on_callback_query(filters.regex("set_language_"))
-def language_selection(client: pyrogram.client.Client, callback_query: pyrogram.types.CallbackQuery):
-    language = callback_query.data.split("_")[-1]
-    set_user_language(callback_query.from_user.id, language)
+@bot.on_callback_query(filters.regex("lang_"))
+def language_callback(client, callback_query):
+    user_id = callback_query.from_user.id
+    language = callback_query.data.split("_")[1]
+    set_user_language(user_id, language)
     if language == "en":
-        bot.send_message(callback_query.message.chat.id, f"👋 Hi {callback_query.from_user.mention}, I am Save Restricted Bot, I can send you restricted content by its post link\n\n{USAGE}",
-            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🌐 Update Channel", url="https://t.me/VJ_Botz")]]),
-            reply_to_message_id=callback_query.message.id
-        )
-    else:
-        bot.send_message(callback_query.message.chat.id, f"👋 مرحباً {callback_query.from_user.mention}، أنا بوت لحفظ المحتوى المقيد، يمكنني إرسال المحتوى المقيد لك عن طريق رابط المنشور\n\n{USAGE_AR}",
-            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🌐 قناة التحديثات", url="https://t.me/VJ_Botz")]]),
-            reply_to_message_id=callback_query.message.id
-        )
+        bot.send_message(callback_query.message.chat.id, f"**👋 Hi {callback_query.from_user.mention}, I am Save Restricted Bot, I can send you restricted content by its post link**\n\n{USAGE}",
+                         reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Channel ⁽ ᴛᴄʀᴇᴘ ₎ 🍿", url="https://t.me/tcrep1")]]), reply_to_message_id=callback_query.message.id)
+    elif language == "ar":
+        bot.send_message(callback_query.message.chat.id, f"**👋 مرحبًا {callback_query.from_user.mention}، أنا بوت حفظ المحتوى المقيد، يمكنني إرسال المحتوى المقيد لك عبر رابط المنشور**\n\n{USAGE_AR}",
+                         reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(" قناة ⁽ ᴛᴄʀᴇᴘ ₎ 🍿", url="https://t.me/tcrep1")]]), reply_to_message_id=callback_query.message.id)
+    callback_query.answer()
 
 @bot.on_message(filters.text)
 def save(client: pyrogram.client.Client, message: pyrogram.types.messages_and_media.message.Message):
     user_language = get_user_language(message.from_user.id)
-    if user_language == "en":
-        handle_message_en(client, message)
-    else:
-        handle_message_ar(client, message)
+    if user_language is None:
+        bot.send_message(message.chat.id, "Please choose your language / من فضلك اختر لغتك",
+                         reply_markup=InlineKeyboardMarkup([
+                             [InlineKeyboardButton("English", callback_data="lang_en"),
+                              InlineKeyboardButton("العربية", callback_data="lang_ar")]
+                         ]), reply_to_message_id=message.id)
+        return
 
-def handle_message_en(client: pyrogram.client.Client, message: pyrogram.types.messages_and_media.message.Message):
     print(message.text)
-
     # Joining chats
     if "https://t.me/+" in message.text or "https://t.me/joinchat/" in message.text:
         if acc is None:
-            bot.send_message(message.chat.id, f"**String Session is not Set**", reply_to_message_id=message.id)
+            if user_language == "en":
+                bot.send_message(message.chat.id, "**String Session is not Set**", reply_to_message_id=message.id)
+            elif user_language == "ar":
+                bot.send_message(message.chat.id, "**جلسة السلسلة غير مضبوطة**", reply_to_message_id=message.id)
             return
 
         try:
@@ -136,11 +139,20 @@ def handle_message_en(client: pyrogram.client.Client, message: pyrogram.types.me
             except Exception as e:
                 bot.send_message(message.chat.id, f"**Error** : __{e}__", reply_to_message_id=message.id)
                 return
-            bot.send_message(message.chat.id, "**Chat Joined**", reply_to_message_id=message.id)
+            if user_language == "en":
+                bot.send_message(message.chat.id, "**Chat Joined**", reply_to_message_id=message.id)
+            elif user_language == "ar":
+                bot.send_message(message.chat.id, "**تم الانضمام إلى الدردشة**", reply_to_message_id=message.id)
         except UserAlreadyParticipant:
-            bot.send_message(message.chat.id, "**Chat already Joined**", reply_to_message_id=message.id)
+            if user_language == "en":
+                bot.send_message(message.chat.id, "**Chat already Joined**", reply_to_message_id=message.id)
+            elif user_language == "ar":
+                bot.send_message(message.chat.id, "**تم الانضمام إلى الدردشة مسبقاً**", reply_to_message_id=message.id)
         except InviteHashExpired:
-            bot.send_message(message.chat.id, "**Invalid Link**", reply_to_message_id=message.id)
+            if user_language == "en":
+                bot.send_message(message.chat.id, "**Invalid Link**", reply_to_message_id=message.id)
+            elif user_language == "ar":
+                bot.send_message(message.chat.id, "**رابط غير صالح**", reply_to_message_id=message.id)
 
     # Getting message
     elif "https://t.me/" in message.text:
@@ -153,13 +165,15 @@ def handle_message_en(client: pyrogram.client.Client, message: pyrogram.types.me
             toID = fromID
 
         for msgid in range(fromID, toID + 1):
-
             # Private
             if "https://t.me/c/" in message.text:
                 chatid = int("-100" + datas[4])
 
                 if acc is None:
-                    bot.send_message(message.chat.id, f"**String Session is not Set**", reply_to_message_id=message.id)
+                    if user_language == "en":
+                        bot.send_message(message.chat.id, "**String Session is not Set**", reply_to_message_id=message.id)
+                    elif user_language == "ar":
+                        bot.send_message(message.chat.id, "**جلسة السلسلة غير مضبوطة**", reply_to_message_id=message.id)
                     return
 
                 handle_private(message, chatid, msgid)
@@ -169,7 +183,10 @@ def handle_message_en(client: pyrogram.client.Client, message: pyrogram.types.me
                 username = datas[4]
 
                 if acc is None:
-                    bot.send_message(message.chat.id, f"**String Session is not Set**", reply_to_message_id=message.id)
+                    if user_language == "en":
+                        bot.send_message(message.chat.id, "**String Session is not Set**", reply_to_message_id=message.id)
+                    elif user_language == "ar":
+                        bot.send_message(message.chat.id, "**جلسة السلسلة غير مضبوطة**", reply_to_message_id=message.id)
                     return
                 try:
                     handle_private(message, username, msgid)
@@ -183,14 +200,20 @@ def handle_message_en(client: pyrogram.client.Client, message: pyrogram.types.me
                 try:
                     msg = bot.get_messages(username, msgid)
                 except UsernameNotOccupied:
-                    bot.send_message(message.chat.id, f"**The username is not occupied by anyone**", reply_to_message_id=message.id)
+                    if user_language == "en":
+                        bot.send_message(message.chat.id, "**The username is not occupied by anyone**", reply_to_message_id=message.id)
+                    elif user_language == "ar":
+                        bot.send_message(message.chat.id, "**اسم المستخدم غير مشغول من قبل أي شخص**", reply_to_message_id=message.id)
                     return
 
                 try:
                     bot.copy_message(message.chat.id, msg.chat.id, msg.id, reply_to_message_id=message.id)
                 except:
                     if acc is None:
-                        bot.send_message(message.chat.id, f"**String Session is not Set**", reply_to_message_id=message.id)
+                        if user_language == "en":
+                            bot.send_message(message.chat.id, "**String Session is not Set**", reply_to_message_id=message.id)
+                        elif user_language == "ar":
+                            bot.send_message(message.chat.id, "**جلسة السلسلة غير مضبوطة**", reply_to_message_id=message.id)
                         return
                     try:
                         handle_private(message, username, msgid)
@@ -200,86 +223,7 @@ def handle_message_en(client: pyrogram.client.Client, message: pyrogram.types.me
             # Wait time
             time.sleep(3)
 
-def handle_message_ar(client: pyrogram.client.Client, message: pyrogram.types.messages_and_media.message.Message):
-    print(message.text)
-
-    # Joining chats
-    if "https://t.me/+" in message.text or "https://t.me/joinchat/" in message.text:
-        if acc is None:
-            bot.send_message(message.chat.id, f"**جلسة السلسلة غير مضبوطة**", reply_to_message_id=message.id)
-            return
-
-        try:
-            try:
-                acc.join_chat(message.text)
-            except Exception as e:
-                bot.send_message(message.chat.id, f"**خطأ** : __{e}__", reply_to_message_id=message.id)
-                return
-            bot.send_message(message.chat.id, "**تم الانضمام إلى الدردشة**", reply_to_message_id=message.id)
-        except UserAlreadyParticipant:
-            bot.send_message(message.chat.id, "**تم الانضمام إلى الدردشة مسبقاً**", reply_to_message_id=message.id)
-        except InviteHashExpired:
-            bot.send_message(message.chat.id, "**رابط غير صالح**", reply_to_message_id=message.id)
-
-    # Getting message
-    elif "https://t.me/" in message.text:
-        datas = message.text.split("/")
-        temp = datas[-1].replace("?single", "").split("-")
-        fromID = int(temp[0].strip())
-        try:
-            toID = int(temp[1].strip())
-        except:
-            toID = fromID
-
-        for msgid in range(fromID, toID + 1):
-
-            # Private
-            if "https://t.me/c/" in message.text:
-                chatid = int("-100" + datas[4])
-
-                if acc is None:
-                    bot.send_message(message.chat.id, f"**جلسة السلسلة غير مضبوطة**", reply_to_message_id=message.id)
-                    return
-
-                handle_private(message, chatid, msgid)
-
-            # Bot
-            elif "https://t.me/b/" in message.text:
-                username = datas[4]
-
-                if acc is None:
-                    bot.send_message(message.chat.id, f"**جلسة السلسلة غير مضبوطة**", reply_to_message_id=message.id)
-                    return
-                try:
-                    handle_private(message, username, msgid)
-                except Exception as e:
-                    bot.send_message(message.chat.id, f"**خطأ** : __{e}__", reply_to_message_id=message.id)
-
-            # Public
-            else:
-                username = datas[3]
-
-                try:
-                    msg = bot.get_messages(username, msgid)
-                except UsernameNotOccupied:
-                    bot.send_message(message.chat.id, f"**اسم المستخدم غير موجود**", reply_to_message_id=message.id)
-                    return
-
-                try:
-                    bot.copy_message(message.chat.id, msg.chat.id, msg.id, reply_to_message_id=message.id)
-                except:
-                    if acc is None:
-                        bot.send_message(message.chat.id, f"**جلسة السلسلة غير مضبوطة**", reply_to_message_id=message.id)
-                        return
-                    try:
-                        handle_private(message, username, msgid)
-                    except Exception as e:
-                        bot.send_message(message.chat.id, f"**خطأ** : __{e}__", reply_to_message_id=message.id)
-
-            # Wait time
-            time.sleep(3)
-
-# Handle private
+# Handle private messages
 def handle_private(message: pyrogram.types.messages_and_media.message.Message, chatid: int, msgid: int):
     msg: pyrogram.types.messages_and_media.message.Message = acc.get_messages(chatid, msgid)
     msg_type = get_message_type(msg)
@@ -303,7 +247,8 @@ def handle_private(message: pyrogram.types.messages_and_media.message.Message, c
         except:
             thumb = None
 
-        bot.send_document(message.chat.id, file, thumb=thumb, caption=msg.caption, caption_entities=msg.caption_entities, reply_to_message_id=message.id, progress=progress, progress_args=[message, "up"])
+        bot.send_document(message.chat.id, file, thumb=thumb, caption=msg.caption, caption_entities=msg.caption_entities,
+                          reply_to_message_id=message.id, progress=progress, progress_args=[message, "up"])
         if thumb is not None:
             os.remove(thumb)
 
@@ -313,7 +258,9 @@ def handle_private(message: pyrogram.types.messages_and_media.message.Message, c
         except:
             thumb = None
 
-        bot.send_video(message.chat.id, file, duration=msg.video.duration, width=msg.video.width, height=msg.video.height, thumb=thumb, caption=msg.caption, caption_entities=msg.caption_entities, reply_to_message_id=message.id, progress=progress, progress_args=[message, "up"])
+        bot.send_video(message.chat.id, file, duration=msg.video.duration, width=msg.video.width, height=msg.video.height,
+                       thumb=thumb, caption=msg.caption, caption_entities=msg.caption_entities,
+                       reply_to_message_id=message.id, progress=progress, progress_args=[message, "up"])
         if thumb is not None:
             os.remove(thumb)
 
@@ -324,7 +271,8 @@ def handle_private(message: pyrogram.types.messages_and_media.message.Message, c
         bot.send_sticker(message.chat.id, file, reply_to_message_id=message.id)
 
     elif "Voice" == msg_type:
-        bot.send_voice(message.chat.id, file, caption=msg.caption, thumb=thumb, caption_entities=msg.caption_entities, reply_to_message_id=message.id, progress=progress, progress_args=[message, "up"])
+        bot.send_voice(message.chat.id, file, caption=msg.caption, thumb=thumb, caption_entities=msg.caption_entities,
+                       reply_to_message_id=message.id, progress=progress, progress_args=[message, "up"])
 
     elif "Audio" == msg_type:
         try:
@@ -332,12 +280,14 @@ def handle_private(message: pyrogram.types.messages_and_media.message.Message, c
         except:
             thumb = None
 
-        bot.send_audio(message.chat.id, file, caption=msg.caption, caption_entities=msg.caption_entities, reply_to_message_id=message.id, progress=progress, progress_args=[message, "up"])
+        bot.send_audio(message.chat.id, file, caption=msg.caption, caption_entities=msg.caption_entities,
+                      reply_to_message_id=message.id, progress=progress, progress_args=[message, "up"])
         if thumb is not None:
             os.remove(thumb)
 
     elif "Photo" == msg_type:
-        bot.send_photo(message.chat.id, file, caption=msg.caption, caption_entities=msg.caption_entities, reply_to_message_id=message.id)
+        bot.send_photo(message.chat.id, file, caption=msg.caption, caption_entities=msg.caption_entities,
+                       reply_to_message_id=message.id)
 
     os.remove(file)
     if os.path.exists(f'{message.id}upstatus.txt'):
