@@ -13,19 +13,19 @@
     "env": {
         "HASH": {
             "description": "Your API Hash from my.telegram.org",
-            "value": "YOUR_API_HASH"
+            "value": ""
         },
         "ID": {
             "description": "Your API ID from my.telegram.org",
-            "value": "YOUR_API_ID"
+            "value": ""
         },
         "TOKEN": {
             "description": "Your bot token from @BotFather.",
-            "value": "YOUR_BOT_TOKEN"
+            "value": ""
         },
         "STRING": {
             "description": "Your Pyrogram session string, you can get it from @PyrogramTexBot.",
-            "value": "YOUR_PYROGRAM_SESSION_STRING"
+            "value": ""
         }
     },
     "buildpacks": [
